@@ -13,6 +13,9 @@ contract MultiSigWallet {
     event ConfirmTransaction(address indexed owner, uint indexed txIndex);
     event RevokeConfirmation(address indexed owner, uint indexed txIndex);
     event ExecuteTransaction(address indexed owner, uint indexed txIndex);
+    event OwnerSet(address indexed owner, address indexed newOwner);
+    event OwnerAdded(address indexed owner, address indexed newOwner);
+    event OwnerApproved(address indexed owner, address indexed newOwner);
 
     address[] public owners;
     mapping(address => bool) public isOwner;
@@ -194,6 +197,8 @@ contract MultiSigWallet {
             "owner already added for approval"
         );
         ownerApprovals[newOwner] = 0;
+
+        emit OwnerAdded(msg.sender, newOwner);
     }
 
     function approveOwner(address newOwner)
@@ -202,5 +207,18 @@ contract MultiSigWallet {
         notApproved(newOwner)
     {
         ownerApprovals[newOwner] += 1;
+        emit OwnerApproved(msg.sender, newOwner);
+    }
+
+    function setOwner(address newOwner) public onlyOwner {
+        require(
+            ownerApprovals[newOwner] >= numConfirmationsRequired,
+            "Not enough approvals"
+        );
+        owners.push(newOwner);
+        isOwner[newOwner] = true;
+        numConfirmationsRequired += 1;
+
+        emit OwnerSet(msg.sender, newOwner);
     }
 }
